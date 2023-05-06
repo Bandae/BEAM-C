@@ -1,7 +1,33 @@
 <script setup>
-import { ref } from 'vue'
-const is_open = ref(false)
-const menu_open = ref(0)
+import { ref } from 'vue';
+const is_open = ref(false);
+const menu_open = ref(0);
+const n_length = ref(0);
+const node_data = ref({item: "none"});
+
+const props = defineProps({ node_number: Number });
+const emit = defineEmits(['node_change'])
+
+function add_beam_elem(event, item){
+  switch(item){
+    case 0:
+      node_data.value = {item: "support", type:event.target.elements.support_type.value}
+      break;
+    case 1:
+      const data = event.target.elements;
+      node_data.value = {item: "force", angle: data.angle.value, mag:data.mag.value}
+      break;
+    case 2:
+      node_data.value = {item: "torque", mag:event.target.elements.mag.value}
+      break;
+  }
+  emit('node_change', props.node_number, n_length.value, node_data.value);
+}
+function del_beam_elem(){
+  emit('node_change', props.node_number, n_length.value, {item:"empty"})
+}
+// narazie zrobie ze w kazdym miejscu jest tylko jena rzecz, sila albo moment albo podpora, ale potem trzeba zmienic
+
 </script>
 
 <template>
@@ -10,35 +36,41 @@ const menu_open = ref(0)
 <Teleport to="body">
   <div v-if="is_open" class="popup-background">
     <div class="popup">
+      <div class="length-box">
+        <label>Distance from left end of beam (x=0)</label>
+        <input type="number" name="length" min="0" v-model="n_length">
+      </div>
+      <hr>
       <div class="item-type-container">
         <button @click="menu_open = 0">Podpora</button>
         <button @click="menu_open = 1">Siła</button>
         <button @click="menu_open = 2">Moment</button>
+        <button @click="del_beam_elem">Clear</button>
       </div>
       <div class="options-container">
-        <form @submit.prevent="send_data___nwm" v-if="menu_open == 0">
+        <form @submit.prevent="add_beam_elem($event, 0)" v-if="menu_open == 0">
           <div class="support-type-container">
-            <input type="radio" id="Fix" name="support-type" value="Fix">
-            <label for="Fix">Fix</label>
-            <input type="radio" id="roll" name="support-type" value="roll">
+            <input type="radio" id="fix" name="support_type" value="fix">
+            <label for="fix">Fix</label>
+            <input type="radio" id="roll" name="support_type" value="roll">
             <label for="roll">roll</label>
-            <input type="radio" id="pin" name="support-type" value="pin">
+            <input type="radio" id="pin" name="support_type" value="pin">
             <label for="pin">pin</label>
           </div>
           <button type="submit">Accept</button>
         </form>
 
-        <form @submit.prevent="send_data___nwm" v-if="menu_open == 1">
+        <form @submit.prevent="add_beam_elem($event, 1)" v-if="menu_open == 1">
           <label>Angle in deg</label>
-          <input type="number">
+          <input type="number" name="angle">
           <label>Magnitude</label>
-          <input type="number">
+          <input type="number" name="mag">
           <button type="submit">Accept</button>
         </form>
 
-        <form @submit.prevent="send_data___nwm" v-if="menu_open == 2">
+        <form @submit.prevent="add_beam_elem($event, 2)" v-if="menu_open == 2">
           <label>Magnitude</label>
-          <input type="number">
+          <input type="number" name="mag">
           <button type="submit">Accept</button>
         </form>
       </div>
@@ -60,6 +92,14 @@ const menu_open = ref(0)
   width: 70%;
 }
 
+.popup *{
+  margin-bottom: 0.5rem;
+}
+
+hr {
+  border-top: 1px dashed red;
+}
+
 .node {
   width: 30px;
   height: 30px;
@@ -77,6 +117,11 @@ const menu_open = ref(0)
   height: 100vh;
   z-index: 998;
   top: 0;
+}
+
+.length-box{
+  display: flex;
+  justify-content: space-between;
 }
 
 form {
