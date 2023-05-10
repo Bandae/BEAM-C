@@ -1,12 +1,11 @@
 <script setup>
 import { ref } from 'vue';
+const props = defineProps({ node_number: Number, n_length: Number, beam_length: Number});
+const emit = defineEmits(['node_change', 'node_delete'])
+
 const is_open = ref(false);
 const menu_open = ref(0);
-const n_length = ref(0);
-const node_data = ref({item: "none"});
-
-const props = defineProps({ node_number: Number });
-const emit = defineEmits(['node_change'])
+const node_data = ref({item: "empty", n_length:props.n_length});
 
 function add_beam_elem(event, item){
   switch(item){
@@ -21,31 +20,31 @@ function add_beam_elem(event, item){
       node_data.value = {item: "torque", mag:event.target.elements.mag.value}
       break;
   }
-  emit('node_change', props.node_number, n_length.value, node_data.value);
+  emit('node_change', props.node_number, props.n_length, node_data.value);
+  is_open.value = false
 }
-function del_beam_elem(){
-  emit('node_change', props.node_number, n_length.value, {item:"empty"})
+function clear_beam_elem(){
+  emit('node_change', props.node_number, props.n_length, {item:"empty"})
+}
+function delete_node(){
+  emit('node_delete', props.node_number)
+  is_open.value = false
 }
 // narazie zrobie ze w kazdym miejscu jest tylko jena rzecz, sila albo moment albo podpora, ale potem trzeba zmienic
 
 </script>
 
 <template>
-<button class="node" @click="is_open = !is_open">aa</button>
+<button class="node" :style="`--left: ${props.n_length/props.beam_length*100}%`" @click="is_open = !is_open">aa</button>
 
 <Teleport to="body">
   <div v-if="is_open" class="popup-background">
     <div class="popup">
-      <div class="length-box">
-        <label>Distance from left end of beam (x=0)</label>
-        <input type="number" name="length" min="0" v-model="n_length">
-      </div>
-      <hr>
       <div class="item-type-container">
         <button @click="menu_open = 0">Podpora</button>
         <button @click="menu_open = 1">Siła</button>
         <button @click="menu_open = 2">Moment</button>
-        <button @click="del_beam_elem">Clear</button>
+        <button @click="clear_beam_elem">Clear</button>
       </div>
       <div class="options-container">
         <form @submit.prevent="add_beam_elem($event, 0)" v-if="menu_open == 0">
@@ -74,6 +73,7 @@ function del_beam_elem(){
           <button type="submit">Accept</button>
         </form>
       </div>
+      <button @click="delete_node">Delete node</button>
       <button @click="is_open = !is_open">close</button>
     </div>
   </div>
@@ -83,7 +83,7 @@ function del_beam_elem(){
 <style scoped>
 .popup{
   position: absolute;
-  z-index: 999;
+  z-index: 1000;
   top: 20%;
   left: 15%;
   border-radius: 10px;
@@ -96,14 +96,17 @@ function del_beam_elem(){
   margin-bottom: 0.5rem;
 }
 
-hr {
-  border-top: 1px dashed red;
-}
-
 .node {
+  /* zrobic tu pulsujace kolka jasnoniebieskie jesli jest empty*/
+  position: absolute;
+  --left: 0%;
+  left: calc(var(--left) - 15px);
+  top: calc(50% - 15px);
   width: 30px;
   height: 30px;
-  background-color: red;
+  background-color: blue;
+  border: none;
+  border-radius: 50%;
   z-index: 10;
   text-align: center;
   margin-top: auto;
@@ -115,30 +118,41 @@ hr {
   background-color: rgba(0,0,0,0.4);
   width: 100vw;
   height: 100vh;
-  z-index: 998;
+  z-index: 999;
   top: 0;
 }
 
 .length-box{
   display: flex;
-  justify-content: space-between;
+  flex-direction: row;
+  align-items: center;
 }
 
-form {
+.length-box input{
+  margin-left: auto;
+  width: 4em;
+}
+
+.length-box button{
+  padding: 0.3rem;
+  margin-left: 0.5rem;
+}
+
+.options-container form {
   display: flex;
   flex-direction: column;
   align-items: center;
 }
 
-form *{
+.options-container form *{
   width: 50%;
 }
 
-form button{
+.options-container form button{
   margin-top: 10px;
 }
 
-form input {
+.options-container form input {
   margin-bottom: 10px;
 }
 </style>
