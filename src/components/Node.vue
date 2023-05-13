@@ -40,8 +40,14 @@ function delete_node(){
 </script>
 
 <template>
-<button class="node" :style="`--left: ${props.n_length/props.beam_length*100}%`" @click="is_open = !is_open">aa</button>
-
+<button class="node" :style="`--left: ${props.n_length/props.beam_length*100}%`" @click="is_open = !is_open">
+  <div v-if="node_data.item === 'empty'" class="node-empty">
+    <div class="node-pulse"></div>
+  </div>
+  <img v-else-if="node_data.item === 'force'" src="/force.svg" class="force-icon" :style="`--rotation: ${node_data.angle}deg`">
+  <img v-else-if="node_data.item === 'torque'" src="/torque.svg" class="torque-icon" :class="{ 'neg-torque-icon': node_data.mag < 0 }">
+  <img v-else-if="node_data.item === 'support'" :src="`/${node_data.type}.svg`" class="support-icon" :class="{ 'fix-icon': node_data.type === 'fix', 'fix-icon-end': props.n_length > 0}">
+</button>
 <Teleport to="body">
   <div v-if="is_open" class="popup-background">
     <div class="popup">
@@ -72,7 +78,7 @@ function delete_node(){
           </form>
           <form @submit.prevent="add_beam_elem($event, 2)" v-if="menu_open == 2">
             <label>Magnitude</label>
-            <input type="text" inputmode="numeric" pattern="^[\d]*([.,]?[\d]+|[\d])$" name="mag" required>
+            <input type="text" inputmode="numeric" pattern="^-?[\d]*([.,]?[\d]+|[\d])$" name="mag" required>
             <button type="submit">Accept</button>
           </form>
         </div>
@@ -80,6 +86,7 @@ function delete_node(){
       <div v-else class="node-data-container">
         <p>{{ node_data.item }}</p>
         <p v-if="node_data.item === 'support'">{{ node_data.type }}</p>
+        <p>{{ props.n_length }}</p>
         <p v-if="node_data.angle">&alpha; = {{ node_data.angle }}&deg;</p>
         <p v-if="node_data.item === 'force'">F = {{ node_data.mag }}N</p>
         <p v-if="node_data.item === 'torque'">M = {{ node_data.mag }}Nm</p>
@@ -108,23 +115,73 @@ function delete_node(){
   margin-bottom: 0.5rem;
 }
 
-.node {
-  /* zrobic tu pulsujace kolka jasnoniebieskie jesli jest empty*/
-  position: absolute;
-  --left: 0%;
-  left: calc(var(--left) - 15px);
-  top: calc(50% - 15px);
-  width: 30px;
-  height: 30px;
-  background-color: blue;
-  border: none;
-  border-radius: 50%;
-  z-index: 10;
-  text-align: center;
-  margin-top: auto;
-  margin-bottom: auto;
+@keyframes pulse{
+  0%{
+    scale: 1;
+    opacity: 0;
+  }
+  50%{
+    scale: 1.5;
+    opacity: 1;
+  }
+  100%{
+    scale: 1;
+    opacity: 0;
+  }
 }
 
+.node {
+  position: absolute;
+  width: 32px;
+  height: 32px;
+  --left: 0%;
+  left: calc(var(--left) - 16px);
+  top: calc(50% - 16px);
+  background-color: transparent;
+  border: none;
+}
+.node-pulse {
+  width: 32px;
+  height: 32px;
+  border: 2px solid #59bfff;
+  border-radius: 50%;
+  animation: pulse 2s ease 1s infinite;
+}
+.node-empty {
+  width: 32px;
+  height: 32px;
+  background-color: #59bfff;
+  border-radius: 50%;
+  margin: auto;
+}
+.force-icon {
+  position: relative;
+  --rotation: 0deg;
+  top: -36px;
+  transform: rotate(calc(90deg - var(--rotation)));
+  transform-origin: 50% 100%;
+}
+.torque-icon {
+  position: relative;
+  top: -40px;
+  left: -12px;
+}
+.neg-torque-icon{
+  transform: scaleX(-1);
+  left: -8px;
+}
+.support-icon {
+  position: relative;
+  left: -5px;
+  top: 7px;
+}
+.fix-icon {
+  top: -10px;
+}
+.fix-icon-end {
+  transform: scaleX(-1);
+  left: 4px;
+}
 .popup-background{
   position: fixed;
   background-color: rgba(0,0,0,0.4);
