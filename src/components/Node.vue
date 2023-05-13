@@ -1,11 +1,12 @@
 <script setup>
 import { ref } from 'vue';
+import { find_number } from '@/utils/calc_fn';
 const props = defineProps({ node_number: Number, n_length: Number, beam_length: Number});
 const emit = defineEmits(['node_change', 'node_delete'])
 
 const is_open = ref(false);
 const menu_open = ref(0);
-const node_data = ref({item: "empty", n_length:props.n_length});
+const node_data = ref({item: "empty"});
 
 function add_beam_elem(event, item){
   switch(item){
@@ -14,16 +15,20 @@ function add_beam_elem(event, item){
       break;
     case 1:
       const data = event.target.elements;
-      node_data.value = {item: "force", angle: data.angle.value, mag:data.mag.value}
+      const angle = find_number(data.angle.value)
+      const mag_f = find_number(data.mag.value)
+      node_data.value = {item: "force", angle: angle, mag:mag_f}
       break;
     case 2:
-      node_data.value = {item: "torque", mag:event.target.elements.mag.value}
+      const mag_t = find_number(event.target.elements.mag.value)
+      node_data.value = {item: "torque", mag:mag_t}
       break;
   }
   emit('node_change', props.node_number, props.n_length, node_data.value);
   is_open.value = false
 }
 function clear_beam_elem(){
+  node_data.value = {item: "empty"}
   emit('node_change', props.node_number, props.n_length, {item:"empty"})
 }
 function delete_node(){
@@ -40,40 +45,47 @@ function delete_node(){
 <Teleport to="body">
   <div v-if="is_open" class="popup-background">
     <div class="popup">
-      <div class="item-type-container">
-        <button @click="menu_open = 0">Podpora</button>
-        <button @click="menu_open = 1">Siła</button>
-        <button @click="menu_open = 2">Moment</button>
-        <button @click="clear_beam_elem">Clear</button>
+      <div v-if="node_data.item === 'empty'" class="node-init-container">
+        <div class="item-type-container">
+          <button @click="menu_open = 0">Podpora</button>
+          <button @click="menu_open = 1">Siła</button>
+          <button @click="menu_open = 2">Moment</button>
+        </div>
+        <div class="options-container">
+          <form @submit.prevent="add_beam_elem($event, 0)" v-if="menu_open == 0">
+            <div class="support-type-container">
+              <input type="radio" id="fix" name="support_type" value="fix">
+              <label for="fix">Fix</label>
+              <input type="radio" id="roll" name="support_type" value="roll">
+              <label for="roll">roll</label>
+              <input type="radio" id="pin" name="support_type" value="pin">
+              <label for="pin">pin</label>
+            </div>
+            <button type="submit">Accept</button>
+          </form>
+          <form @submit.prevent="add_beam_elem($event, 1)" v-if="menu_open == 1">
+            <label>Angle in deg</label>
+            <input type="text" inputmode="numeric" pattern="^(([12]?[\d]?[\d])|(3[0-5][\d])|(360))$" name="angle" required>
+            <label>Magnitude</label>
+            <input type="text" inputmode="numeric" pattern="^[\d]*([.,]?[\d]+|[\d])$" name="mag" required>
+            <button type="submit">Accept</button>
+          </form>
+          <form @submit.prevent="add_beam_elem($event, 2)" v-if="menu_open == 2">
+            <label>Magnitude</label>
+            <input type="text" inputmode="numeric" pattern="^[\d]*([.,]?[\d]+|[\d])$" name="mag" required>
+            <button type="submit">Accept</button>
+          </form>
+        </div>
       </div>
-      <div class="options-container">
-        <form @submit.prevent="add_beam_elem($event, 0)" v-if="menu_open == 0">
-          <div class="support-type-container">
-            <input type="radio" id="fix" name="support_type" value="fix">
-            <label for="fix">Fix</label>
-            <input type="radio" id="roll" name="support_type" value="roll">
-            <label for="roll">roll</label>
-            <input type="radio" id="pin" name="support_type" value="pin">
-            <label for="pin">pin</label>
-          </div>
-          <button type="submit">Accept</button>
-        </form>
-
-        <form @submit.prevent="add_beam_elem($event, 1)" v-if="menu_open == 1">
-          <label>Angle in deg</label>
-          <input type="number" name="angle">
-          <label>Magnitude</label>
-          <input type="number" name="mag">
-          <button type="submit">Accept</button>
-        </form>
-
-        <form @submit.prevent="add_beam_elem($event, 2)" v-if="menu_open == 2">
-          <label>Magnitude</label>
-          <input type="number" name="mag">
-          <button type="submit">Accept</button>
-        </form>
+      <div v-else class="node-data-container">
+        <p>{{ node_data.item }}</p>
+        <p v-if="node_data.item === 'support'">{{ node_data.type }}</p>
+        <p v-if="node_data.angle">&alpha; = {{ node_data.angle }}&deg;</p>
+        <p v-if="node_data.item === 'force'">F = {{ node_data.mag }}N</p>
+        <p v-if="node_data.item === 'torque'">M = {{ node_data.mag }}Nm</p>
       </div>
       <button @click="delete_node">Delete node</button>
+      <button @click="clear_beam_elem">Clear node</button>
       <button @click="is_open = !is_open">close</button>
     </div>
   </div>
@@ -120,6 +132,12 @@ function delete_node(){
   height: 100vh;
   z-index: 999;
   top: 0;
+}
+
+.node-data-container {
+  display: flex;
+  flex-direction: column;
+  padding: 1rem;
 }
 
 .length-box{

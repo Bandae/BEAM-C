@@ -1,18 +1,20 @@
 <script setup>
 import { ref } from 'vue'
-import { calculate_beam } from '../utils/calc_fn';
+import { calculate_beam, find_number } from '@/utils/calc_fn';
 import Node from '@/components/Node.vue'
 
-// wszedzie gdzie parseInt jest
-// zmienic na text i sprawdzac, zeby sie dalo po przecinku liczby dawac
-
 const nodes = ref([]);
-const beam_length = ref()
+const beam_length = ref();
+const react_results = ref([]);
 
 function add_node(event){
-  const passed_length = parseInt(event.target.elements.n_length.value)
-  const same_nodes = nodes.value.filter(obj => obj.n_length === passed_length)
-  if (nodes.value.length < 10 && same_nodes.length == 0){
+  const passed_length = find_number(event.target.elements.n_length.value, beam_length.value);
+  const same_nodes = nodes.value.filter(obj => obj.n_length === passed_length);
+  if (passed_length === null) {
+    //jakis alert albo cos ze musi byc dobrze
+    return
+  }
+  if (same_nodes.length == 0){
     nodes.value.push({item:"empty", n_length:passed_length});
   }
 }
@@ -21,14 +23,23 @@ function update_nodes(index, n_length, data){
   nodes.value[index] = data;
 }
 function set_beam_length(event){
-  beam_length.value = parseInt(event.target.elements.beam_length.value)
+  const passed_length = find_number(event.target.elements.beam_length.value);
+  if (passed_length === null) {
+    //jakis alert albo cos ze musi byc dobrze
+    return
+  }
+  beam_length.value = passed_length;
+}
+function click_calc(){
+  react_results.value = calculate_beam(nodes.value);
+  if (!react_results.value) return false;
 }
 </script>
 
 <template>
   <form class="set-beam-length-container" @submit.prevent="set_beam_length" v-if="!beam_length">
     <label>Set the length of the beam [m]</label>
-    <input type="number" name="beam_length" min="0" max="10" required>
+    <input type="text" pattern="^[\d]*([.,]?[\d]+|[\d])$" name="beam_length" required>
     <button type="submit">Accept</button>
   </form>
   <div class="beam-length-container" v-else>
@@ -45,11 +56,23 @@ function set_beam_length(event){
       <hr>
       <div>
         <label>Distance from left end of beam (from x=0)</label>
-        <input type="number" name="n_length" min="0" :max="beam_length" required>
+        <input type="text" inputmode="numeric" pattern="^[\d]*([.,]?[\d]+|[\d])$" name="n_length" required>
         <button type="submit">Add node</button>
       </div>
     </form>
-    <button @click="calculate_beam">Calculate</button>
+    <button @click="click_calc">Calculate</button>
+    <div class="results-container" v-if="react_results">
+      <div class="react-res-container">
+        <div v-for="res of react_results">
+          <p>Support: {{ res.type }}</p>
+          <p>Length: {{ res.n_length }}</p>
+          <hr>
+          <p v-if="res.fx">Fx = {{ res.fx }}N</p>
+          <p v-if="res.fy">Fy = {{ res.fy }}N</p>
+          <p v-if="res.torque">M = {{ res.torque }}Nm</p>
+        </div>
+      </div>
+    </div>
   </main>
 </template>
 
@@ -127,6 +150,18 @@ function set_beam_length(event){
 hr {
   border: none;
   border: 1px solid #dfdfdf;
-  margin-bottom: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.react-res-container{
+  display: flex;
+  margin-top: 2rem;
+}
+
+.react-res-container > *{
+  border: 1px solid #dfdfdf;
+  border-radius: 10px;
+  margin-right: 1rem;
+  padding: 1rem;
 }
 </style>
