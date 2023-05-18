@@ -1,3 +1,6 @@
+### Current progress on the site can be seen here:
+https://gorgeous-biscotti-ca3798.netlify.app/
+
 # A beam calculation website for mechanical engineering (in progress)
 
 ## Calculations:
