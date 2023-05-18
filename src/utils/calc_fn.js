@@ -1,12 +1,12 @@
-function round_to_2(num){
-  return Math.round(num * 100) / 100;
+function round_num(num, dec){
+  return Math.round(num * 10**dec) / 10**dec;
 }
 
 export function find_number(nm_str, max=null){
   const nm_fin = Number(nm_str.replace(',', '.'))
-  if (max === null ) return nm_fin
+  if (max === null ) return round_num(nm_fin, 2)
   if (nm_fin > max) return null
-  return nm_fin
+  return round_num(nm_fin, 2)
 }
 
 function check_static(supports){
@@ -86,15 +86,15 @@ export function calculate_beam(nodes){
         torques.push(node)
         break;
       case "force":
-        const hor = round_to_2(node.mag * Math.cos(node.angle / (180/Math.PI)))
-        const ver = round_to_2(node.mag * Math.sin(node.angle / (180/Math.PI)))
+        const hor = round_num(node.mag * Math.cos(node.angle / (180/Math.PI)), 2)
+        const ver = round_num(node.mag * Math.sin(node.angle / (180/Math.PI)), 2)
         forces_hor.push({mag: hor, n_length:node.n_length});
         forces_ver.push({mag: ver, n_length:node.n_length});
         break;
     }
   }
   if (check_static(supports) === false) {
-    alert("Belka statycznie niewyznaczalna.");
+    alert("Beam statically indeterminate.");
     return
   }
   supports = calc_statb_react(supports, forces_hor, forces_ver, torques);

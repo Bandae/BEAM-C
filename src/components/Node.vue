@@ -1,12 +1,12 @@
 <script setup>
 import { ref } from 'vue';
 import { find_number } from '@/utils/calc_fn';
-const props = defineProps({ node_number: Number, n_length: Number, beam_length: Number});
+const props = defineProps({ n_length: Number, beam_length: Number});
 const emit = defineEmits(['node_change', 'node_delete'])
 
 const is_open = ref(false);
 const menu_open = ref(0);
-const node_data = ref({item: "empty"});
+const node_data = ref({item: "empty", n_length: props.n_length});
 
 function add_beam_elem(event, item){
   switch(item){
@@ -24,19 +24,17 @@ function add_beam_elem(event, item){
       node_data.value = {item: "torque", mag:mag_t}
       break;
   }
-  emit('node_change', props.node_number, props.n_length, node_data.value);
   is_open.value = false
+  emit('node_change', props.n_length, node_data.value);
 }
 function clear_beam_elem(){
   node_data.value = {item: "empty"}
-  emit('node_change', props.node_number, props.n_length, {item:"empty"})
+  emit('node_change', props.n_length, {item:"empty"})
 }
 function delete_node(){
-  emit('node_delete', props.node_number)
+  emit('node_delete', props.n_length)
   is_open.value = false
 }
-// narazie zrobie ze w kazdym miejscu jest tylko jena rzecz, sila albo moment albo podpora, ale potem trzeba zmienic
-
 </script>
 
 <template>
@@ -44,41 +42,50 @@ function delete_node(){
   <div v-if="node_data.item === 'empty'" class="node-empty">
     <div class="node-pulse"></div>
   </div>
-  <img v-else-if="node_data.item === 'force'" src="/force.svg" class="force-icon" :style="`--rotation: ${node_data.angle}deg`">
-  <img v-else-if="node_data.item === 'torque'" src="/torque.svg" class="torque-icon" :class="{ 'neg-torque-icon': node_data.mag < 0 }">
-  <img v-else-if="node_data.item === 'support'" :src="`/${node_data.type}.svg`" class="support-icon" :class="{ 'fix-icon': node_data.type === 'fix', 'fix-icon-end': props.n_length > 0}">
+  <img v-else-if="node_data.item === 'force'" src="@/assets/force.svg" class="force-icon" :style="`--rotation: ${node_data.angle}deg`">
+  <img v-else-if="node_data.item === 'torque'" src="@/assets/torque.svg" class="torque-icon" :class="{ 'neg-torque-icon': node_data.mag < 0 }">
+  <img v-else-if="node_data.type === 'fix'" src="@/assets/fix.svg" class="support-icon fix-icon" :class="{ 'fix-icon-end': props.n_length > 0}">
+  <img v-else-if="node_data.type === 'roll'" src="@/assets/roll.svg" class="support-icon">
+  <img v-else-if="node_data.type === 'pin'" src="@/assets/pin.svg" class="support-icon">
 </button>
 <Teleport to="body">
   <div v-if="is_open" class="popup-background">
     <div class="popup">
       <div v-if="node_data.item === 'empty'" class="node-init-container">
-        <div class="item-type-container">
-          <button @click="menu_open = 0">Podpora</button>
-          <button @click="menu_open = 1">Siła</button>
-          <button @click="menu_open = 2">Moment</button>
+        <div class="btn-group">
+          <button @click="menu_open = 0">Support</button>
+          <button @click="menu_open = 1">Force</button>
+          <button @click="menu_open = 2">Torque</button>
         </div>
         <div class="options-container">
           <form @submit.prevent="add_beam_elem($event, 0)" v-if="menu_open == 0">
             <div class="support-type-container">
-              <input type="radio" id="fix" name="support_type" value="fix">
-              <label for="fix">Fix</label>
-              <input type="radio" id="roll" name="support_type" value="roll">
-              <label for="roll">roll</label>
-              <input type="radio" id="pin" name="support_type" value="pin">
-              <label for="pin">pin</label>
+              <div v-if="props.n_length === 0 || props.n_length === props.beam_length">
+                <input type="radio" id="fix" name="support_type" value="fix">
+                <label for="fix">Fix</label>
+              </div>
+              <div>
+                <input type="radio" id="roll" name="support_type" value="roll">
+                <label for="roll">Roll</label>
+              </div>
+              <div>
+                <input type="radio" id="pin" name="support_type" value="pin">
+                <label for="pin">Pin</label>
+              </div>
             </div>
             <button type="submit">Accept</button>
           </form>
           <form @submit.prevent="add_beam_elem($event, 1)" v-if="menu_open == 1">
-            <label>Angle in deg</label>
-            <input type="text" inputmode="numeric" pattern="^(([12]?[\d]?[\d])|(3[0-5][\d])|(360))$" name="angle" required>
-            <label>Magnitude</label>
-            <input type="text" inputmode="numeric" pattern="^[\d]*([.,]?[\d]+|[\d])$" name="mag" required>
+            <label>Angle (&deg;)</label>
+            <input type="text" inputmode="decimal" pattern="^(([12]?[\d]?[\d])|(3[0-5][\d])|(360))$" name="angle" required>
+            <label>Magnitude (N)</label>
+            <input type="text" inputmode="decimal" pattern="^[\d]*([.,]?[\d]+|[\d])$" name="mag" required>
             <button type="submit">Accept</button>
           </form>
           <form @submit.prevent="add_beam_elem($event, 2)" v-if="menu_open == 2">
-            <label>Magnitude</label>
-            <input type="text" inputmode="numeric" pattern="^-?[\d]*([.,]?[\d]+|[\d])$" name="mag" required>
+            <label>Magnitude (N)</label>
+            <small>(negative values for left-handed torque)</small>
+            <input type="text" inputmode="decimal" pattern="^-?[\d]*([.,]?[\d]+|[\d])$" name="mag" required>
             <button type="submit">Accept</button>
           </form>
         </div>
@@ -86,14 +93,16 @@ function delete_node(){
       <div v-else class="node-data-container">
         <p>{{ node_data.item }}</p>
         <p v-if="node_data.item === 'support'">{{ node_data.type }}</p>
-        <p>{{ props.n_length }}</p>
+        <p>x = {{ props.n_length }}m</p>
         <p v-if="node_data.angle">&alpha; = {{ node_data.angle }}&deg;</p>
         <p v-if="node_data.item === 'force'">F = {{ node_data.mag }}N</p>
         <p v-if="node_data.item === 'torque'">M = {{ node_data.mag }}Nm</p>
       </div>
-      <button @click="delete_node">Delete node</button>
-      <button @click="clear_beam_elem">Clear node</button>
-      <button @click="is_open = !is_open">close</button>
+      <div class="btn-group">
+        <button @click="delete_node">Delete node</button>
+        <button @click="clear_beam_elem">Clear node</button>
+        <button @click="is_open = !is_open">Close</button>
+      </div>
     </div>
   </div>
 </Teleport>
@@ -104,15 +113,22 @@ function delete_node(){
   position: absolute;
   z-index: 1000;
   top: 20%;
-  left: 15%;
-  border-radius: 10px;
-  background-color: white;
-  padding: 20px;
-  width: 70%;
+  inset: 20% 0 0 0;
+  margin: 0 auto;
+  border-radius: 1em;
+  background-color: var(--clr-background);
+  padding: 2em;
+  width: fit-content;
+  height: fit-content;
 }
 
-.popup *{
-  margin-bottom: 0.5rem;
+.popup-background {
+  position: fixed;
+  background-color: rgba(0,0,0,0.4);
+  width: 100vw;
+  height: 100vh;
+  z-index: 999;
+  top: 0;
 }
 
 @keyframes pulse{
@@ -132,102 +148,115 @@ function delete_node(){
 
 .node {
   position: absolute;
-  width: 32px;
-  height: 32px;
   --left: 0%;
-  left: calc(var(--left) - 16px);
-  top: calc(50% - 16px);
+  width: 32px;
+  inset: 0 0 0 calc(var(--left) - 18px);
+  margin: auto 0;
   background-color: transparent;
-  border: none;
+  transition: none;
 }
+
+.node:hover {
+  box-shadow: none;
+  transform: none;
+  transition: none;
+}
+
+.node:focus {
+  outline: none;
+}
+
+.node:hover .node-empty, .node:focus .node-empty {
+  background-color: var(--clr-blue-dark);
+}
+
+.node:hover .node-pulse, .node:focus .node-pulse {
+  border-color: var(--clr-blue-dark);
+}
+
+.node:hover > img, .node:focus > img {
+  filter: drop-shadow(6px 3px 2px var(--clr-text-soft));
+}
+
 .node-pulse {
   width: 32px;
   height: 32px;
-  border: 2px solid #59bfff;
+  border: 2px solid var(--clr-blue);
   border-radius: 50%;
   animation: pulse 2s ease 1s infinite;
 }
+
 .node-empty {
   width: 32px;
   height: 32px;
-  background-color: #59bfff;
+  background-color: var(--clr-blue);
   border-radius: 50%;
-  margin: auto;
 }
+
 .force-icon {
   position: relative;
+  top: -25px;
+  left: -8px;
   --rotation: 0deg;
-  top: -36px;
   transform: rotate(calc(90deg - var(--rotation)));
   transform-origin: 50% 100%;
 }
+
 .torque-icon {
   position: relative;
-  top: -40px;
-  left: -12px;
+  top: -25px;
+  left: -22px;
 }
-.neg-torque-icon{
+
+.neg-torque-icon {
   transform: scaleX(-1);
-  left: -8px;
+  left: -16px;
 }
+
 .support-icon {
   position: relative;
-  left: -5px;
-  top: 7px;
+  left: -16px;
+  top: 20px;
 }
+
 .fix-icon {
-  top: -10px;
+  top: 2px;
+  left: -6px;
 }
+
 .fix-icon-end {
   transform: scaleX(-1);
   left: 4px;
-}
-.popup-background{
-  position: fixed;
-  background-color: rgba(0,0,0,0.4);
-  width: 100vw;
-  height: 100vh;
-  z-index: 999;
-  top: 0;
 }
 
 .node-data-container {
   display: flex;
   flex-direction: column;
-  padding: 1rem;
+  margin-bottom: 1em;
+  font-size: var(--fs-p);
 }
 
-.length-box{
+.support-type-container {
   display: flex;
-  flex-direction: row;
-  align-items: center;
+  flex-direction: column;
 }
 
-.length-box input{
-  margin-left: auto;
-  width: 4em;
-}
-
-.length-box button{
-  padding: 0.3rem;
-  margin-left: 0.5rem;
+.support-type-container > * {
+  margin-bottom: 0.5em;
 }
 
 .options-container form {
   display: flex;
   flex-direction: column;
   align-items: center;
-}
-
-.options-container form *{
-  width: 50%;
-}
-
-.options-container form button{
-  margin-top: 10px;
+  margin: 1.5em 0 1.5em 0;
+  padding: 0.5em;
+  border: 2px solid var(--clr-border);
+  border-radius: 1em;
 }
 
 .options-container form input {
-  margin-bottom: 10px;
+  margin-bottom: 0.7em;
 }
+
 </style>

@@ -6,29 +6,41 @@ import Node from '@/components/Node.vue'
 const nodes = ref([]);
 const beam_length = ref();
 const react_results = ref([]);
+const errors = ref([]);
 
 function add_node(event){
+  errors.value = []
   const passed_length = find_number(event.target.elements.n_length.value, beam_length.value);
   const same_nodes = nodes.value.filter(obj => obj.n_length === passed_length);
   if (passed_length === null) {
-    //jakis alert albo cos ze musi byc dobrze
+    errors.value.push('too_long')
     return
   }
   if (same_nodes.length == 0){
     nodes.value.push({item:"empty", n_length:passed_length});
   }
+  else {
+    errors.value.push('n_exists')
+  }
 }
-function update_nodes(index, n_length, data){
+function update_nodes(n_length, data){
+  react_results.value = []
   data.n_length = n_length;
-  nodes.value[index] = data;
+  const node_index = nodes.value.findIndex(ob => ob.n_length === n_length);
+  nodes.value[node_index] = data;
+}
+function delete_node(l){
+  react_results.value = []
+  const copy = nodes.value;
+  nodes.value = [];
+  for (const item of copy){
+    if (item.n_length !== l){
+      nodes.value.push(item);
+    }
+  }
 }
 function set_beam_length(event){
-  const passed_length = find_number(event.target.elements.beam_length.value);
-  if (passed_length === null) {
-    //jakis alert albo cos ze musi byc dobrze
-    return
-  }
-  beam_length.value = passed_length;
+  beam_length.value = find_number(event.target.elements.beam_length.value);
 }
 function click_calc(){
   react_results.value = calculate_beam(nodes.value);
@@ -38,26 +50,36 @@ function click_calc(){
 
 <template>
   <form class="set-beam-length-container" @submit.prevent="set_beam_length" v-if="!beam_length">
-    <label>Set the length of the beam [m]</label>
-    <input type="text" pattern="^[\d]*([.,]?[\d]+|[\d])$" name="beam_length" required>
-    <button type="submit">Accept</button>
+    <p class="container-heading">Set the length of the beam [m]</p>
+    <div>
+      <input type="text" inputmode="decimal" pattern="^[\d]*([.,]?[\d]+|[\d])$" name="beam_length" required>
+      <button type="submit">Accept</button>
+    </div>
   </form>
   <div class="beam-length-container" v-else>
-    <h3>Beam length: {{ beam_length }}m</h3>
+    <p class="container-heading">Beam length: {{ beam_length }}m</p>
   </div>
   <main v-if="beam_length">
     <div class="beam-container">
       <div class="beam">
-        <Node v-for="[index, node] in nodes.entries()" :node_number="index" :n_length="node.n_length" :beam_length="beam_length" @node_change="(i, l, data) => update_nodes(i, l, data)" @node_delete="(i) => nodes.splice(i, 1)"/>
+        <Node v-for="node of nodes" :key="node.n_length" :n_length="node.n_length" :beam_length="beam_length" @node_change="(l, data) => update_nodes(l, data)" @node_delete="(l) => delete_node(l)"/>
       </div>
     </div>
     <form class="add-node-container" @submit.prevent="add_node">
-      <p>Add a new node</p>
+      <p class="container-heading">Add a new node</p>
       <hr>
       <div>
         <label>Distance from left end of beam (from x=0)</label>
-        <input type="text" inputmode="numeric" pattern="^[\d]*([.,]?[\d]+|[\d])$" name="n_length" required>
-        <button type="submit">Add node</button>
+        <div>
+          <input type="text" inputmode="decimal" pattern="^[\d]*([.,]?[\d]+|[\d])$" name="n_length" required>
+          <button type="submit">Add node</button>
+        </div>
+      </div>
+      <div v-if="errors.includes('too_long')" class="error-container">
+        <p>Please pass a distance shorter or equal to the length of the beam.</p>
+      </div>
+      <div v-if="errors.includes('n_exists')" class="error-container">
+        <p>Please pass a distance other than that of an existing node.</p>
       </div>
     </form>
     <button @click="click_calc">Calculate</button>
@@ -84,57 +106,80 @@ function click_calc(){
 }
 
 .beam-container {
-  border: 1px solid #dfdfdf;
-  border-radius: 10px;
+  border: 1px solid var(--clr-border);
+  background-color: var(--clr-white);
+  border-radius: 1em;
   display: flex;
   justify-content: center;
 }
 
+@media screen and (max-width: 550px) {
+  .beam-container {
+    border: none;
+    width: 95%;
+  }
+}
+
 .beam::before {
-  border-top: 5px solid black;
+  border-top: 5px solid var(--clr-black);
   content: "";
   margin: 0 auto;
   position: absolute;
   inset: 48% 0 0 0;
 }
 
-.add-node-container{
-  border: 1px solid #dfdfdf;
-  padding: 0 1rem 1rem 1rem;
-  margin-top: 1rem;
-  border-radius: 10px;
+.add-node-container {
+  border: 1px solid var(--clr-border);
+  padding: 0 1em 1em 1em;
+  margin-top: 1em;
+  border-radius: 1em;
   width: 50%;
 }
 
-.add-node-container div{
+.add-node-container > div {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.add-node-container > div > div {
+  margin-left: auto;
   display: flex;
   align-items: center;
 }
 
-.add-node-container input{
+.add-node-container input {
   margin-left: auto;
   margin-right: 1em;
 }
 
-.add-node-container p{
-  font-size: 1.5rem;
+.set-beam-length-container {
+  border: 1px solid var(--clr-border);
+  padding: 1em;
+  margin-bottom: 1em;
+  border-radius: 1em;
+  width: 50%;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+}
+@media screen and (max-width: 700px) {
+  .set-beam-length-container {
+    width: auto;
+  }
 }
 
-.set-beam-length-container {
-  border: 1px solid #dfdfdf;
-  padding: 1rem;
-  margin-bottom: 1rem;
-  border-radius: 10px;
-  width: 50%;
+.set-beam-length-container > div {
+  margin-left: auto;
   display: flex;
   align-items: center;
 }
 
 .beam-length-container {
-  border: 1px solid #dfdfdf;
-  padding: 1rem;
-  margin-bottom: 1rem;
-  border-radius: 10px;
+  border: 1px solid var(--clr-border);
+  padding: 1em;
+  margin-bottom: 1em;
+  border-radius: 1em;
   width: fit-content;
 }
 
@@ -143,25 +188,30 @@ function click_calc(){
   margin-right: 1em;
 }
 
-.set-beam-length-container p {
-  font-size: 1.5rem;
-}
-
 hr {
   border: none;
-  border: 1px solid #dfdfdf;
-  margin-bottom: 0.5rem;
+  border: 1px solid var(--clr-border);
+  margin-bottom: 0.5em;
 }
 
-.react-res-container{
+.react-res-container {
   display: flex;
-  margin-top: 2rem;
+  margin-top: 2em;
 }
 
-.react-res-container > *{
-  border: 1px solid #dfdfdf;
-  border-radius: 10px;
-  margin-right: 1rem;
-  padding: 1rem;
+.react-res-container > * {
+  border: 1px solid var(--clr-border);
+  border-radius: 1em;
+  margin-right: 1em;
+  padding: 1em;
+}
+
+.error-container {
+  color: var(--clr-red);
+  padding: 0.5em;
+}
+
+main > button {
+  margin-top: 1em;
 }
 </style>
