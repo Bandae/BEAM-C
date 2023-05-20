@@ -84,7 +84,7 @@ function delete_node(){
           </form>
           <form @submit.prevent="add_beam_elem($event, 2)" v-if="menu_open == 2">
             <label>Magnitude (N)</label>
-            <small>(negative values for left-handed torque)</small>
+            <small>(negative values for right-handed torque)</small>
             <input type="text" inputmode="decimal" pattern="^-?[\d]*([.,]?[\d]+|[\d])$" name="mag" required>
             <button type="submit">Accept</button>
           </form>

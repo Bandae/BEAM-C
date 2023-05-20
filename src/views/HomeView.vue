@@ -133,7 +133,12 @@ function click_calc(){
   padding: 0 1em 1em 1em;
   margin-top: 1em;
   border-radius: 1em;
-  width: 50%;
+}
+
+@media screen and (min-width: 550px) {
+  .add-node-container {
+    width: 50%;
+  }
 }
 
 .add-node-container > div {
@@ -143,14 +148,19 @@ function click_calc(){
 }
 
 .add-node-container > div > div {
-  margin-left: auto;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
 }
 
 .add-node-container input {
   margin-left: auto;
   margin-right: 1em;
+}
+
+.add-node-container label {
+  margin-bottom: 0.5em;
+  margin-right: 3em;
 }
 
 .set-beam-length-container {
@@ -196,6 +206,7 @@ hr {
 
 .react-res-container {
   display: flex;
+  flex-wrap: wrap;
   margin-top: 2em;
 }
 
@@ -203,6 +214,7 @@ hr {
   border: 1px solid var(--clr-border);
   border-radius: 1em;
   margin-right: 1em;
+  margin-bottom: 1em;
   padding: 1em;
 }
 

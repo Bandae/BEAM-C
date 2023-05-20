@@ -18,7 +18,7 @@
   --ff-sans: 'Lato', sans-serif;
   --ff-serif: 'Roboto Slab', serif;
 
-  --fs-base: 1rem;
+  --fs-base: 16px;
   --fs-p: 1.2rem;
   --fs-big: 1.7rem;
 }
@@ -38,6 +38,13 @@
     --clr-border: var(--clr-border-dark);
     --clr-text: var(--clr-white);
     --clr-text-soft: var(--clr-white-soft);
+  }
+}
+
+@media screen and (max-width: 500px){
+  :root{
+    --fs-p: 1.1rem;
+    --fs-big: 1.4rem;
   }
 }
 
@@ -68,4 +75,8 @@ p {
 
 .container-heading {
   font-size: var(--fs-big);
+}
+
+label {
+  font-size: calc(var(--fs-p) * 0.9);
 }
