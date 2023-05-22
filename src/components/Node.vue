@@ -17,11 +17,12 @@ function add_beam_elem(event, item){
       const data = event.target.elements;
       const angle = find_number(data.angle.value)
       const mag_f = find_number(data.mag.value)
-      node_data.value = {item: "force", angle: angle, mag:mag_f}
+      node_data.value = {item: "force", angle: angle, mag: mag_f}
       break;
     case 2:
-      const mag_t = find_number(event.target.elements.mag.value)
-      node_data.value = {item: "torque", mag:mag_t}
+      const sign = event.target.elements.torque_dir.value
+      const mag_t = find_number(sign + event.target.elements.mag.value)
+      node_data.value = {item: "torque", mag: mag_t}
       break;
   }
   is_open.value = false
@@ -83,9 +84,18 @@ function delete_node(){
             <button type="submit">Accept</button>
           </form>
           <form @submit.prevent="add_beam_elem($event, 2)" v-if="menu_open == 2">
+            <div class="torque-dir-container">
+              <label>
+                <input type="radio" id="lefthand" name="torque_dir" value="" required>
+                <img src="@/assets/torque.svg">
+              </label>
+              <label>
+                <input class="righthand" type="radio" id="righthand" name="torque_dir" value="-" required>
+                <img src="@/assets/torque.svg">
+              </label>
+            </div>
             <label>Magnitude (N)</label>
-            <small>(negative values for right-handed torque)</small>
-            <input type="text" inputmode="decimal" pattern="^-?[\d]*([.,]?[\d]+|[\d])$" name="mag" required>
+            <input type="text" inputmode="decimal" pattern="^[\d]*([.,]?[\d]+|[\d])$" name="mag" required>
             <button type="submit">Accept</button>
           </form>
         </div>
@@ -154,6 +164,7 @@ function delete_node(){
   margin: auto 0;
   background-color: transparent;
   transition: none;
+  cursor: pointer;
 }
 
 .node:hover {
@@ -259,4 +270,39 @@ function delete_node(){
   margin-bottom: 0.7em;
 }
 
+.torque-dir-container {
+  display: flex;
+  justify-content: space-around;
+  width: 100%;
+  margin: 0.5em;
+}
+
+.torque-dir-container input[type=radio] { 
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.torque-dir-container input[type=radio] + img {
+  cursor: pointer;
+  padding: 0.4em;
+}
+
+.torque-dir-container input[type=radio]:checked + img {
+  border-radius: 1em;
+  outline: 3px solid var(--clr-blue-dark);
+}
+
+.torque-dir-container input:hover + img {
+  transform: translateY(-0.25em);
+}
+
+input.righthand + img{
+  transform: scaleX(-1);
+}
+
+input.righthand:hover + img{
+  transform: translateY(-0.25em) scaleX(-1);
+}
 </style>
