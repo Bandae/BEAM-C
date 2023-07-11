@@ -3,10 +3,13 @@ import { ref } from 'vue'
 import { calculate_beam, find_number } from '@/utils/calc_fn';
 import Node from '@/components/Node.vue'
 
+import Chart from 'chart.js/auto'
+
 const nodes = ref([]);
 const beam_length = ref();
 const react_results = ref([]);
 const errors = ref([]);
+let torque_chart = null;
 
 function add_node(event){
   errors.value = []
@@ -43,13 +46,48 @@ function set_beam_length(event){
   beam_length.value = find_number(event.target.elements.beam_length.value);
 }
 function click_calc(){
-  react_results.value = calculate_beam(nodes.value);
+  const results = calculate_beam(nodes.value, beam_length.value);
+  react_results.value = results.supports;
   if (!react_results.value) return false;
+
+  const data = results.torque_graph_points;
+  console.log(torque_chart)
+  if(torque_chart){
+    torque_chart.data.datasets[0].data = data
+    torque_chart.update()
+    return
+  }
+  torque_chart = new Chart("baseGraph", {
+    type: "line",
+    data: {
+      datasets: [{
+        data: data,
+      }]
+    },
+    options:{
+      responsive: true,
+      scales: {
+        x: {
+          title: {
+            display: true,
+            text: 'x[m]'
+          },
+          type: 'linear',
+        },
+        y: {
+          title: {
+            display: true,
+            text: 'M[Nm]'
+          },
+        },
+      }
+    },
+  });
 }
 </script>
 
 <template>
-  <form class="set-beam-length-container" @submit.prevent="set_beam_length" v-if="!beam_length">
+  <form class="set-beam-length-container" @submit.prevent="set_beam_length" v-if="!beam_length" autocomplete="off">
     <p class="container-heading">Set the length of the beam [m]</p>
     <div>
       <input type="text" inputmode="decimal" pattern="^[\d]*([.,]?[\d]+|[\d])$" name="beam_length" required>
@@ -65,7 +103,7 @@ function click_calc(){
         <Node v-for="node of nodes" :key="node.n_length" :n_length="node.n_length" :beam_length="beam_length" @node_change="(l, data) => update_nodes(l, data)" @node_delete="(l) => delete_node(l)"/>
       </div>
     </div>
-    <form class="add-node-container" @submit.prevent="add_node">
+    <form class="add-node-container" @submit.prevent="add_node" autocomplete="off">
       <p class="container-heading">Add a new node</p>
       <hr>
       <div>
@@ -93,6 +131,9 @@ function click_calc(){
           <p v-if="res.fy">Fy = {{ res.fy }}N</p>
           <p v-if="res.torque">M = {{ res.torque }}Nm</p>
         </div>
+      </div>
+      <div class="base-graph-container">
+        <canvas id="baseGraph"></canvas>
       </div>
     </div>
   </main>

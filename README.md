@@ -8,7 +8,8 @@ https://gorgeous-biscotti-ca3798.netlify.app/
 - ✅<s>check if beam is statically determinate</s>
 - ✅<s>calculate reactions in supports</s>
 - add continuous loading
-- return graphs for forcas and torques in the beam
+- graphs for forces and torques in the beam
+- graphs after adding cont. loads
 - allow hinges
 - other graphs and calculations, like beam displacement
 - statically indeterminate beams

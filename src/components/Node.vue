@@ -76,14 +76,14 @@ function delete_node(){
             </div>
             <button type="submit">Accept</button>
           </form>
-          <form @submit.prevent="add_beam_elem($event, 1)" v-if="menu_open == 1">
+          <form @submit.prevent="add_beam_elem($event, 1)" v-if="menu_open == 1" autocomplete="off">
             <label>Angle (&deg;)</label>
             <input type="text" inputmode="decimal" pattern="^(([12]?[\d]?[\d])|(3[0-5][\d])|(360))$" name="angle" required>
             <label>Magnitude (N)</label>
             <input type="text" inputmode="decimal" pattern="^[\d]*([.,]?[\d]+|[\d])$" name="mag" required>
             <button type="submit">Accept</button>
           </form>
-          <form @submit.prevent="add_beam_elem($event, 2)" v-if="menu_open == 2">
+          <form @submit.prevent="add_beam_elem($event, 2)" v-if="menu_open == 2" autocomplete="off">
             <div class="torque-dir-container">
               <label>
                 <input type="radio" id="lefthand" name="torque_dir" value="" required>
