@@ -10,6 +10,8 @@ const beam_length = ref();
 const react_results = ref([]);
 const errors = ref([]);
 let torque_chart = null;
+let t_force_chart = null;
+let n_force_chart = null;
 
 function add_node(event){
   errors.value = []
@@ -50,39 +52,107 @@ function click_calc(){
   react_results.value = results.supports;
   if (!react_results.value) return false;
 
-  const data = results.torque_graph_points;
-  console.log(torque_chart)
+  const torque_data = results.torque_graph_points;
   if(torque_chart){
-    torque_chart.data.datasets[0].data = data
+    torque_chart.data.datasets[0].data = torque_data
     torque_chart.update()
-    return
   }
-  torque_chart = new Chart("baseGraph", {
-    type: "line",
-    data: {
-      datasets: [{
-        data: data,
-      }]
-    },
-    options:{
-      responsive: true,
-      scales: {
-        x: {
-          title: {
-            display: true,
-            text: 'x[m]'
+  else{
+    torque_chart = new Chart("torqueGraph", {
+      type: "line",
+      data: {
+        datasets: [{
+          data: torque_data,
+        }]
+      },
+      options:{
+        responsive: true,
+        scales: {
+          x: {
+            title: {
+              display: true,
+              text: 'x[m]'
+            },
+            type: 'linear',
           },
-          type: 'linear',
-        },
-        y: {
-          title: {
-            display: true,
-            text: 'M[Nm]'
+          y: {
+            title: {
+              display: true,
+              text: 'M[Nm]'
+            },
           },
-        },
-      }
-    },
-  });
+        }
+      },
+    });
+  }
+
+  const t_force_data = results.t_force_graph_points;
+  if(t_force_chart){
+    t_force_chart.data.datasets[0].data = t_force_data
+    t_force_chart.update()
+  }
+  else{
+    t_force_chart = new Chart("tForceGraph", {
+      type: "line",
+      data: {
+        datasets: [{
+          data: t_force_data,
+        }]
+      },
+      options:{
+        responsive: true,
+        scales: {
+          x: {
+            title: {
+              display: true,
+              text: 'x[m]'
+            },
+            type: 'linear',
+          },
+          y: {
+            title: {
+              display: true,
+              text: 'T[N]'
+            },
+          },
+        }
+      },
+    });
+  }
+
+  const n_force_data = results.n_force_graph_points;
+  if(n_force_chart){
+    n_force_chart.data.datasets[0].data = n_force_data
+    n_force_chart.update()
+  }
+  else{
+    n_force_chart = new Chart("nForceGraph", {
+      type: "line",
+      data: {
+        datasets: [{
+          data: n_force_data,
+        }]
+      },
+      options:{
+        responsive: true,
+        scales: {
+          x: {
+            title: {
+              display: true,
+              text: 'x[m]'
+            },
+            type: 'linear',
+          },
+          y: {
+            title: {
+              display: true,
+              text: 'N[N]'
+            },
+          },
+        }
+      },
+    });
+  }
 }
 </script>
 
@@ -132,8 +202,16 @@ function click_calc(){
           <p v-if="res.torque">M = {{ res.torque }}Nm</p>
         </div>
       </div>
-      <div class="base-graph-container">
-        <canvas id="baseGraph"></canvas>
+      <div class="graphs-container">
+        <div class="t-force-graph-container">
+          <canvas id="tForceGraph"></canvas>
+        </div>
+        <div class="n-force-graph-container">
+          <canvas id="nForceGraph"></canvas>
+        </div>
+        <div class="torque-graph-container">
+          <canvas id="torqueGraph"></canvas>
+        </div>
       </div>
     </div>
   </main>

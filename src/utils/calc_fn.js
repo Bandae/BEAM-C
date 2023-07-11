@@ -67,6 +67,52 @@ function calc_statb_react(supports, forces_hor, forces_ver, torques){
   }
 }
 
+function calc_t_force_graph(supports, forces_ver, beam_length){
+  let points = []
+  let elements = [...supports, ...forces_ver];
+  const len0 = elements.find(obj => {return obj.n_length === 0});
+  if (!len0) {
+    elements.push({n_length: 0, fy: 0});
+  }
+  const lenmax = elements.find(obj => {return obj.n_length === beam_length});
+  if (!lenmax) {
+    elements.push({n_length: beam_length, fy: 0});
+  }
+  
+  elements.sort((a, b) => a.n_length - b.n_length);
+  let force = 0;
+  for(const elem of elements){
+    points.push({x: elem.n_length, y: force})
+    if(elem.fy){force += elem.fy}
+    else if(elem.item == 'force'){force += elem.mag}
+    points.push({x: elem.n_length, y: force})
+  }
+  return points
+}
+
+function calc_n_force_graph(supports, forces_hor, beam_length){
+  let points = []
+  let elements = [...supports, ...forces_hor];
+  const len0 = elements.find(obj => {return obj.n_length === 0});
+  if (!len0) {
+    elements.push({n_length: 0, fx: 0});
+  }
+  const lenmax = elements.find(obj => {return obj.n_length === beam_length});
+  if (!lenmax) {
+    elements.push({n_length: beam_length, fx: 0});
+  }
+  
+  elements.sort((a, b) => a.n_length - b.n_length);
+  let force = 0;
+  for(const elem of elements){
+    points.push({x: elem.n_length, y: force})
+    if(elem.fx){force += elem.fx}
+    else if(elem.item == 'force'){force += elem.mag}
+    points.push({x: elem.n_length, y: force})
+  }
+  return points
+}
+
 function calc_torque_graph(supports, forces_ver, torques, beam_length){
   let points = []
   let elements = [...supports, ...forces_ver, ...torques];
@@ -124,6 +170,7 @@ export function calculate_beam(nodes, beam_length){
   }
   supports = calc_statb_react(supports, forces_hor, forces_ver, torques);
   const torque_graph_points = calc_torque_graph(supports, forces_ver, torques, beam_length)
-  // liczenie punktow dla wykresów momentu, sil tnacych, sil normalnych, kazda w funkcji moze.
-  return {'supports': supports, 'torque_graph_points': torque_graph_points}
+  const t_force_graph_points = calc_t_force_graph(supports, forces_ver, beam_length)
+  const n_force_graph_points = calc_n_force_graph(supports, forces_hor, beam_length)
+  return {'supports': supports, 'torque_graph_points': torque_graph_points, 't_force_graph_points': t_force_graph_points, 'n_force_graph_points': n_force_graph_points}
 }

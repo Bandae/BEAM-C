@@ -17,3 +17,4 @@ https://gorgeous-biscotti-ca3798.netlify.app/
 ### Other to do's:
 - allow multiple items in one node
 - errors in dom instead of alerts
+- unify data in node objects (ex. 'fy' on both supports and forces); Split forces into fy/fx right after adding node
