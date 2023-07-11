@@ -1,8 +1,8 @@
 <script setup>
 import { ref } from 'vue';
-import { find_number } from '@/utils/calc_fn';
+import { find_number, round_num } from '@/utils/calc_fn';
 const props = defineProps({ n_length: Number, beam_length: Number});
-const emit = defineEmits(['node_change', 'node_delete'])
+const emit = defineEmits(['node_change', 'node_delete']);
 
 const is_open = ref(false);
 const menu_open = ref(0);
@@ -11,30 +11,32 @@ const node_data = ref({item: "empty", n_length: props.n_length});
 function add_beam_elem(event, item){
   switch(item){
     case 0:
-      node_data.value = {item: "support", type:event.target.elements.support_type.value}
+      node_data.value = {item: "support", type:event.target.elements.support_type.value};
       break;
     case 1:
       const data = event.target.elements;
-      const angle = find_number(data.angle.value)
-      const mag_f = find_number(data.mag.value)
-      node_data.value = {item: "force", angle: angle, mag: mag_f}
+      const angle = find_number(data.angle.value);
+      const mag_f = find_number(data.mag.value);
+      const hor = round_num(mag_f * Math.cos(angle / (180/Math.PI)), 2);
+      const ver = round_num(mag_f * Math.sin(angle / (180/Math.PI)), 2);
+      node_data.value = {item: "force", angle: angle, mag: mag_f, fy: ver, fx: hor};
       break;
     case 2:
-      const sign = event.target.elements.torque_dir.value
-      const mag_t = find_number(sign + event.target.elements.mag.value)
-      node_data.value = {item: "torque", mag: mag_t}
+      const sign = event.target.elements.torque_dir.value;
+      const mag_t = find_number(sign + event.target.elements.mag.value);
+      node_data.value = {item: "torque", torque: mag_t};
       break;
   }
-  is_open.value = false
+  is_open.value = false;
   emit('node_change', props.n_length, node_data.value);
 }
 function clear_beam_elem(){
-  node_data.value = {item: "empty"}
-  emit('node_change', props.n_length, {item:"empty"})
+  node_data.value = {item: "empty"};
+  emit('node_change', props.n_length, {item:"empty"});
 }
 function delete_node(){
-  emit('node_delete', props.n_length)
-  is_open.value = false
+  emit('node_delete', props.n_length);
+  is_open.value = false;
 }
 </script>
 
@@ -44,7 +46,7 @@ function delete_node(){
     <div class="node-pulse"></div>
   </div>
   <img v-else-if="node_data.item === 'force'" src="@/assets/force.svg" class="force-icon" :style="`--rotation: ${node_data.angle}deg`">
-  <img v-else-if="node_data.item === 'torque'" src="@/assets/torque.svg" class="torque-icon" :class="{ 'neg-torque-icon': node_data.mag < 0 }">
+  <img v-else-if="node_data.item === 'torque'" src="@/assets/torque.svg" class="torque-icon" :class="{ 'neg-torque-icon': node_data.torque < 0 }">
   <img v-else-if="node_data.type === 'fix'" src="@/assets/fix.svg" class="support-icon fix-icon" :class="{ 'fix-icon-end': props.n_length > 0}">
   <img v-else-if="node_data.type === 'roll'" src="@/assets/roll.svg" class="support-icon">
   <img v-else-if="node_data.type === 'pin'" src="@/assets/pin.svg" class="support-icon">
@@ -106,7 +108,7 @@ function delete_node(){
         <p>x = {{ props.n_length }}m</p>
         <p v-if="node_data.angle">&alpha; = {{ node_data.angle }}&deg;</p>
         <p v-if="node_data.item === 'force'">F = {{ node_data.mag }}N</p>
-        <p v-if="node_data.item === 'torque'">M = {{ node_data.mag }}Nm</p>
+        <p v-if="node_data.item === 'torque'">M = {{ node_data.torque }}Nm</p>
       </div>
       <div class="btn-group">
         <button @click="delete_node">Delete node</button>

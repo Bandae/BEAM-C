@@ -8,7 +8,7 @@ https://gorgeous-biscotti-ca3798.netlify.app/
 - ✅<s>check if beam is statically determinate</s>
 - ✅<s>calculate reactions in supports</s>
 - add continuous loading
-- graphs for forces and torques in the beam
+- ✅<s>graphs for forces and torques in the beam</s>
 - graphs after adding cont. loads
 - allow hinges
 - other graphs and calculations, like beam displacement
@@ -17,4 +17,4 @@ https://gorgeous-biscotti-ca3798.netlify.app/
 ### Other to do's:
 - allow multiple items in one node
 - errors in dom instead of alerts
-- unify data in node objects (ex. 'fy' on both supports and forces); Split forces into fy/fx right after adding node
+- ✅<s>unify data in node objects (ex. 'fy' on both supports and forces); Split forces into fy/fx right after adding node</s>

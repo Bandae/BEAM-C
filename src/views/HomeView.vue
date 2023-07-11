@@ -49,6 +49,11 @@ function set_beam_length(event){
 }
 function click_calc(){
   const results = calculate_beam(nodes.value, beam_length.value);
+  if(!results){
+    alert("Beam statically indeterminate.")
+    return
+    //zastapic to errorem
+  }
   react_results.value = results.supports;
   if (!react_results.value) return false;
 
