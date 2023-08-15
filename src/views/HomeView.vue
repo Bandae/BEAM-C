@@ -15,12 +15,12 @@ let n_force_chart = null;
 
 function add_node(event){
   errors.value = []
-  const passed_length = find_number(event.target.elements.n_length.value, beam_length.value);
-  const same_nodes = nodes.value.filter(obj => obj.n_length === passed_length);
-  if (passed_length === null) {
+  const passed_length = find_number(event.target.elements.n_length.value);
+  if (passed_length > beam_length.value) {
     errors.value.push('too_long')
     return
   }
+  const same_nodes = nodes.value.filter(obj => obj.n_length === passed_length);
   if (same_nodes.length == 0){
     nodes.value.push({item:"empty", n_length:passed_length});
   }
@@ -42,6 +42,25 @@ function delete_node(l){
     if (item.n_length !== l){
       nodes.value.push(item);
     }
+  }
+}
+function add_cload(event){
+  errors.value = []
+  const start = find_number(event.target.elements.cload_start.value);
+  const end = find_number(event.target.elements.cload_end.value);
+  const mag = find_number(event.target.elements.cload_mag.value);
+
+  if (end > beam_length.value) {
+    errors.value.push('cload_too_long')
+    return
+  }
+  else if (start >= end) {
+    errors.value.push('cload_end_before_start')
+    return
+  }
+  else {
+    const middle = (end - start) / 2
+    nodes.value.push({item:"cload", n_length:middle, start:start, end:end, mag:mag});
   }
 }
 function set_beam_length(event){
@@ -175,26 +194,53 @@ function click_calc(){
   <main v-if="beam_length">
     <div class="beam-container">
       <div class="beam">
-        <Node v-for="node of nodes" :key="node.n_length" :n_length="node.n_length" :beam_length="beam_length" @node_change="(l, data) => update_nodes(l, data)" @node_delete="(l) => delete_node(l)"/>
+        <Node v-for="node of nodes" :key="node.n_length" :n_length="node.n_length" :beam_length="beam_length" :n_data="node" @node_change="(l, data) => update_nodes(l, data)" @node_delete="(l) => delete_node(l)"/>
       </div>
     </div>
-    <form class="add-node-container" @submit.prevent="add_node" autocomplete="off">
-      <p class="container-heading">Add a new node</p>
-      <hr>
-      <div>
-        <label>Distance from left end of beam (from x=0)</label>
+    <div class="all-add-containers">
+      <form class="add-container" @submit.prevent="add_node" autocomplete="off">
+        <p class="container-heading">Add a new node</p>
+        <hr>
         <div>
-          <input type="text" inputmode="decimal" pattern="^[\d]*([.,]?[\d]+|[\d])$" name="n_length" required>
-          <button type="submit">Add node</button>
+          <label>Distance from left end of beam (from x=0)</label>
+          <div>
+            <input type="text" inputmode="decimal" pattern="^[\d]*([.,]?[\d]+|[\d])$" name="n_length" required>
+            <button type="submit">Add node</button>
+          </div>
         </div>
-      </div>
-      <div v-if="errors.includes('too_long')" class="error-container">
-        <p>Please pass a distance shorter or equal to the length of the beam.</p>
-      </div>
-      <div v-if="errors.includes('n_exists')" class="error-container">
-        <p>Please pass a distance other than that of an existing node.</p>
-      </div>
-    </form>
+        <div v-if="errors.includes('too_long')" class="error-container">
+          <p>Please pass a distance shorter or equal to the length of the beam.</p>
+        </div>
+        <div v-if="errors.includes('n_exists')" class="error-container">
+          <p>Please pass a distance other than that of an existing node.</p>
+        </div>
+      </form>
+      <form class="add-container" @submit.prevent="add_cload" autocomplete="off">
+        <p class="container-heading">Add a new continuous load</p>
+        <hr>
+        <div>
+          <div>
+            <label>Distance for the start of the load</label>
+            <input type="text" inputmode="decimal" pattern="^[\d]*([.,]?[\d]+|[\d])$" name="cload_start" required>
+          </div>
+          <div>
+            <label>Distance for the end of the load</label>
+            <input type="text" inputmode="decimal" pattern="^[\d]*([.,]?[\d]+|[\d])$" name="cload_end" required>
+          </div>
+          <div>
+            <label>Magnitude of load [N]</label>
+            <input type="text" inputmode="decimal" pattern="^[\d]*([.,]?[\d]+|[\d])$" name="cload_mag" required>
+          </div>
+          <button type="submit">Add load</button>
+        </div>
+        <div v-if="errors.includes('cload_too_long')" class="error-container">
+          <p>Please pass an end distance shorter or equal to the length of the beam.</p>
+        </div>
+        <div v-if="errors.includes('cload_end_before_start')" class="error-container">
+          <p>Please pass an end distance longer than the start distance.</p>
+        </div>
+      </form>
+    </div>
     <button @click="click_calc">Calculate</button>
     <div class="results-container" v-if="react_results">
       <div class="react-res-container">
@@ -252,39 +298,64 @@ function click_calc(){
   inset: 48% 0 0 0;
 }
 
-.add-node-container {
+.all-add-containers {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+}
+
+.add-container {
   border: 1px solid var(--clr-border);
   padding: 0 1em 1em 1em;
   margin-top: 1em;
   border-radius: 1em;
 }
 
-@media screen and (min-width: 550px) {
-  .add-node-container {
-    width: 50%;
-  }
+.add-container > div {
+  display: flex;
+  flex-direction: column;
+  flex-wrap: wrap;
+  align-items: left;
+  /* justify-items: left; */
 }
 
-.add-node-container > div {
+.add-container > div > div {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
 }
 
-.add-node-container > div > div {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-}
-
-.add-node-container input {
+.add-container input {
   margin-left: auto;
   margin-right: 1em;
 }
 
-.add-node-container label {
+.add-container button {
+  margin-top: 0.5em;
+  width: 8em;
+  justify-self: center;
+  align-self: center;
+}
+
+.add-container label {
   margin-bottom: 0.5em;
   margin-right: 3em;
+}
+
+@media screen and (max-width: 450px) {
+  .add-container > div > div {
+    flex-direction: column;
+  }
+
+  .add-container input {
+    margin-left: 0;
+    margin-right: auto;
+  }
+
+  .add-container label {
+    margin-bottom: 0.5em;
+    margin-right: auto;
+  }
 }
 
 .set-beam-length-container {
@@ -297,6 +368,7 @@ function click_calc(){
   flex-wrap: wrap;
   align-items: center;
 }
+
 @media screen and (max-width: 700px) {
   .set-beam-length-container {
     width: auto;

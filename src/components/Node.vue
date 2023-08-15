@@ -1,12 +1,16 @@
 <script setup>
 import { ref } from 'vue';
 import { find_number, round_num } from '@/utils/calc_fn';
-const props = defineProps({ n_length: Number, beam_length: Number});
+const props = defineProps({ n_length: Number, beam_length: Number, n_data: Object });
 const emit = defineEmits(['node_change', 'node_delete']);
 
 const is_open = ref(false);
 const menu_open = ref(0);
+
 const node_data = ref({item: "empty", n_length: props.n_length});
+if(props.n_data){
+  node_data.value = props.n_data
+}
 
 function add_beam_elem(event, item){
   switch(item){
@@ -50,6 +54,7 @@ function delete_node(){
   <img v-else-if="node_data.type === 'fix'" src="@/assets/fix.svg" class="support-icon fix-icon" :class="{ 'fix-icon-end': props.n_length > 0}">
   <img v-else-if="node_data.type === 'roll'" src="@/assets/roll.svg" class="support-icon">
   <img v-else-if="node_data.type === 'pin'" src="@/assets/pin.svg" class="support-icon">
+  <!-- tutaj dodac jakis div np i dac background-image strzalek pionowych, jesli cload -->
 </button>
 <Teleport to="body">
   <div v-if="is_open" class="popup-background">
@@ -103,11 +108,13 @@ function delete_node(){
         </div>
       </div>
       <div v-else class="node-data-container">
-        <p>{{ node_data.item }}</p>
+        <p v-if="node_data.item !== 'cload'">{{ node_data.item }}</p>
+        <p v-else>distributed load</p>
         <p v-if="node_data.item === 'support'">{{ node_data.type }}</p>
-        <p>x = {{ props.n_length }}m</p>
+        <p v-if="node_data.item !== 'cload'">x = {{ props.n_length }}m</p>
+        <p v-else>start = {{ node_data.start_l }}m, end = {{ node_data.end_l }}m</p>
         <p v-if="node_data.angle">&alpha; = {{ node_data.angle }}&deg;</p>
-        <p v-if="node_data.item === 'force'">F = {{ node_data.mag }}N</p>
+        <p v-if="node_data.item === 'force' || 'cload'">F = {{ node_data.mag }}N</p>
         <p v-if="node_data.item === 'torque'">M = {{ node_data.torque }}Nm</p>
       </div>
       <div class="btn-group">
