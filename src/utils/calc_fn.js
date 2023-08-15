@@ -85,7 +85,7 @@ function calc_force_graphs(nodes, beam_length){
   const cloads_beginning = nodes_copy.filter(obj => {return obj.item === 'cload'}).map(obj => {obj.n_length = obj.start; return obj})
   const cloads_end = JSON.parse(JSON.stringify(cloads_beginning)).map(obj => {obj.n_length = obj.end; return obj})
   let new_nodes = [...non_cload, ...cloads_beginning, ...cloads_end]
-
+  
   let t_points = []
   let n_points = []
   const len0 = new_nodes.find(obj => {return obj.n_length === 0})
@@ -96,17 +96,14 @@ function calc_force_graphs(nodes, beam_length){
   if (!lenmax) {
     new_nodes.push({n_length: beam_length, fy: 0, fx: 0})
   }
-  
   new_nodes.sort((a, b) => a.n_length - b.n_length);
-  console.log(new_nodes)
 
   let t_force = 0;
   let n_force = 0;
   for(const elem of new_nodes){
     let add_t_force = 0;
     for(const inside of new_nodes.filter(obj => {return obj.item === 'cload' && obj.start < elem.n_length && obj.end > elem.n_length})){
-      console.log(inside)
-      add_t_force += (elem.n_length - inside.n_length) * inside.mag
+      add_t_force += (elem.n_length - inside.n_length) * -inside.mag
     }
 
     if(!(elem.item === 'cload' && elem.n_length === elem.end)){
@@ -115,7 +112,7 @@ function calc_force_graphs(nodes, beam_length){
 
     n_points.push({x: elem.n_length, y: n_force})
     if(elem.fy){t_force += elem.fy}
-    else if(elem.item === 'cload' && elem.n_length === elem.end){t_force += elem.mag * (elem.end - elem.start)}
+    else if(elem.item === 'cload' && elem.n_length === elem.end){t_force += -elem.mag * (elem.end - elem.start)}
     if(elem.fx){n_force += elem.fx}
     t_points.push({x: elem.n_length, y: t_force + add_t_force})
     n_points.push({x: elem.n_length, y: n_force})
@@ -151,8 +148,8 @@ export function calculate_beam(main_nodes, beam_length){
   let nodes = JSON.parse(JSON.stringify(main_nodes));
   nodes = calc_statb_react(nodes);
   if(!nodes) return false
-  const torque_graph_points = calc_torque_graph(nodes, beam_length)
-  const force_graph_points = calc_force_graphs(nodes, beam_length)
+  const torque_graph_points = calc_torque_graph(JSON.parse(JSON.stringify(nodes)), beam_length)
+  const force_graph_points = calc_force_graphs(JSON.parse(JSON.stringify(nodes)), beam_length)
   const supports = nodes.filter(obj => obj.item === 'support')
   return {'supports': supports, 'torque_graph_points': torque_graph_points, 't_force_graph_points': force_graph_points[0], 'n_force_graph_points': force_graph_points[1]}
 }

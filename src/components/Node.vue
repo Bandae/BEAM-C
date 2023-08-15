@@ -54,7 +54,8 @@ function delete_node(){
   <img v-else-if="node_data.type === 'fix'" src="@/assets/fix.svg" class="support-icon fix-icon" :class="{ 'fix-icon-end': props.n_length > 0}">
   <img v-else-if="node_data.type === 'roll'" src="@/assets/roll.svg" class="support-icon">
   <img v-else-if="node_data.type === 'pin'" src="@/assets/pin.svg" class="support-icon">
-  <!-- tutaj dodac jakis div np i dac background-image strzalek pionowych, jesli cload -->
+
+  <div v-else-if="node_data.item === 'cload'" src="@/assets/force.svg" class="cload-icon" :style="`--width: ${(node_data.end - node_data.start)/props.beam_length*100}vw`"></div>
 </button>
 <Teleport to="body">
   <div v-if="is_open" class="popup-background">
@@ -112,7 +113,7 @@ function delete_node(){
         <p v-else>distributed load</p>
         <p v-if="node_data.item === 'support'">{{ node_data.type }}</p>
         <p v-if="node_data.item !== 'cload'">x = {{ props.n_length }}m</p>
-        <p v-else>start = {{ node_data.start_l }}m, end = {{ node_data.end_l }}m</p>
+        <p v-else>start = {{ node_data.start }}m, end = {{ node_data.end }}m</p>
         <p v-if="node_data.angle">&alpha; = {{ node_data.angle }}&deg;</p>
         <p v-if="node_data.item === 'force' || 'cload'">F = {{ node_data.mag }}N</p>
         <p v-if="node_data.item === 'torque'">M = {{ node_data.torque }}Nm</p>
@@ -220,6 +221,21 @@ function delete_node(){
   --rotation: 0deg;
   transform: rotate(calc(90deg - var(--rotation)));
   transform-origin: 50% 100%;
+}
+
+.cload-icon {
+  height: 46px;
+  background-image: url('@/assets/force.svg');
+  background-repeat: repeat;
+  position: relative;
+  top: -25px;
+  --width: 0vw;
+  transform: translateX(calc(-55% + 32px)) scale(1,-1);
+  width: calc(var(--width) * 0.85);
+  /* transform: scale(1,-1); */
+  border-bottom: 2px solid var(--clr-red);
+  border-left: 2px solid var(--clr-red);
+  border-right: 2px solid var(--clr-red);
 }
 
 .torque-icon {

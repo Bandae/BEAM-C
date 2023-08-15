@@ -59,7 +59,7 @@ function add_cload(event){
     return
   }
   else {
-    const middle = (end - start) / 2
+    const middle = ((end - start) / 2) + start
     nodes.value.push({item:"cload", n_length:middle, start:start, end:end, mag:mag});
   }
 }
