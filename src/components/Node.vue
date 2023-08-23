@@ -1,12 +1,16 @@
 <script setup>
 import { ref } from 'vue';
 import { find_number, round_num } from '@/utils/calc_fn';
-const props = defineProps({ n_length: Number, beam_length: Number});
+const props = defineProps({ n_length: Number, beam_length: Number, n_data: Object });
 const emit = defineEmits(['node_change', 'node_delete']);
 
 const is_open = ref(false);
 const menu_open = ref(0);
+
 const node_data = ref({item: "empty", n_length: props.n_length});
+if(props.n_data){
+  node_data.value = props.n_data
+}
 
 function add_beam_elem(event, item){
   switch(item){
@@ -41,6 +45,9 @@ function delete_node(){
 </script>
 
 <template>
+<button class="node cload-node" :style="`--width: ${(node_data.end - node_data.start)/props.beam_length*100}%; --left: ${props.n_length/props.beam_length*100}%`" @click="is_open = !is_open">
+  <div v-if="node_data.item === 'cload'" class="cload-icon" :style="`--width: ${(node_data.end - node_data.start)/props.beam_length*100}%; --left: ${props.n_length/props.beam_length*100}%`"></div>
+</button>
 <button class="node" :style="`--left: ${props.n_length/props.beam_length*100}%`" @click="is_open = !is_open">
   <div v-if="node_data.item === 'empty'" class="node-empty">
     <div class="node-pulse"></div>
@@ -103,11 +110,13 @@ function delete_node(){
         </div>
       </div>
       <div v-else class="node-data-container">
-        <p>{{ node_data.item }}</p>
+        <p v-if="node_data.item !== 'cload'">{{ node_data.item }}</p>
+        <p v-else>distributed load</p>
         <p v-if="node_data.item === 'support'">{{ node_data.type }}</p>
-        <p>x = {{ props.n_length }}m</p>
+        <p v-if="node_data.item !== 'cload'">x = {{ props.n_length }}m</p>
+        <p v-else>start = {{ node_data.start }}m, end = {{ node_data.end }}m</p>
         <p v-if="node_data.angle">&alpha; = {{ node_data.angle }}&deg;</p>
-        <p v-if="node_data.item === 'force'">F = {{ node_data.mag }}N</p>
+        <p v-if="node_data.item === 'force' || 'cload'">F = {{ node_data.mag }}N</p>
         <p v-if="node_data.item === 'torque'">M = {{ node_data.torque }}Nm</p>
       </div>
       <div class="btn-group">
@@ -162,11 +171,18 @@ function delete_node(){
   position: absolute;
   --left: 0%;
   width: 32px;
-  inset: 0 0 0 calc(var(--left) - 18px);
+  inset: 0 0 0 calc(var(--left) - 27px);
   margin: auto 0;
   background-color: transparent;
   transition: none;
   cursor: pointer;
+}
+
+.cload-node {
+  --width: 0%;
+  --left: 0%;
+  width: var(--width);
+  inset: 0 0 0 calc(var(--left) - var(--width) / 2 - 12px);
 }
 
 .node:hover {
@@ -209,37 +225,57 @@ function delete_node(){
 .force-icon {
   position: relative;
   top: -25px;
-  left: -8px;
+  left: 4px;
   --rotation: 0deg;
   transform: rotate(calc(90deg - var(--rotation)));
   transform-origin: 50% 100%;
 }
 
+.cload-icon {
+  height: 46px;
+  background-image: url('@/assets/force.svg');
+  background-repeat: repeat;
+  position: absolute;
+  width: 100%;
+  top: 16px;
+  /* --width: 0%;
+  --left: 0%; */
+  /* transform: translateX(calc(-55% + 32px)) scale(1,-1); */
+  transform: scale(1,-1);
+  /* width: calc(var(--width) * 0.85); */
+  /* width: var(--width); */
+  /* inset: 16px 0 0 calc(var(--left) - var(--width) / 2 + 10px); */
+  /* transform: scale(1,-1); */
+  border-bottom: 2px solid var(--clr-red);
+  border-left: 2px solid var(--clr-red);
+  border-right: 2px solid var(--clr-red);
+}
+
 .torque-icon {
   position: relative;
   top: -25px;
-  left: -22px;
+  left: -10px;
 }
 
 .neg-torque-icon {
   transform: scaleX(-1);
-  left: -16px;
+  left: -10px;
 }
 
 .support-icon {
   position: relative;
-  left: -16px;
-  top: 20px;
+  left: -9px;
+  top: 21px;
 }
 
 .fix-icon {
   top: 2px;
-  left: -6px;
+  left: 3px;
 }
 
 .fix-icon-end {
   transform: scaleX(-1);
-  left: 4px;
+  left: 14px;
 }
 
 .node-data-container {
