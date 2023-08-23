@@ -86,6 +86,7 @@ function click_calc(){
       type: "line",
       data: {
         datasets: [{
+          label: 'Bending Moment',
           data: torque_data,
         }]
       },
@@ -102,7 +103,7 @@ function click_calc(){
           y: {
             title: {
               display: true,
-              text: 'M[Nm]'
+              text: 'Moment[Nm]'
             },
           },
         }
@@ -120,6 +121,7 @@ function click_calc(){
       type: "line",
       data: {
         datasets: [{
+          label: 'Shear Forces',
           data: t_force_data,
         }]
       },
@@ -136,7 +138,7 @@ function click_calc(){
           y: {
             title: {
               display: true,
-              text: 'T[N]'
+              text: 'Shear Forces[N]'
             },
           },
         }
@@ -154,6 +156,7 @@ function click_calc(){
       type: "line",
       data: {
         datasets: [{
+          label: 'Axial Forces',
           data: n_force_data,
         }]
       },
@@ -170,7 +173,7 @@ function click_calc(){
           y: {
             title: {
               display: true,
-              text: 'N[N]'
+              text: 'Axial Forces[N]'
             },
           },
         }

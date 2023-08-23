@@ -45,6 +45,9 @@ function delete_node(){
 </script>
 
 <template>
+<button class="node cload-node" :style="`--width: ${(node_data.end - node_data.start)/props.beam_length*100}%; --left: ${props.n_length/props.beam_length*100}%`" @click="is_open = !is_open">
+  <div v-if="node_data.item === 'cload'" class="cload-icon" :style="`--width: ${(node_data.end - node_data.start)/props.beam_length*100}%; --left: ${props.n_length/props.beam_length*100}%`"></div>
+</button>
 <button class="node" :style="`--left: ${props.n_length/props.beam_length*100}%`" @click="is_open = !is_open">
   <div v-if="node_data.item === 'empty'" class="node-empty">
     <div class="node-pulse"></div>
@@ -54,8 +57,6 @@ function delete_node(){
   <img v-else-if="node_data.type === 'fix'" src="@/assets/fix.svg" class="support-icon fix-icon" :class="{ 'fix-icon-end': props.n_length > 0}">
   <img v-else-if="node_data.type === 'roll'" src="@/assets/roll.svg" class="support-icon">
   <img v-else-if="node_data.type === 'pin'" src="@/assets/pin.svg" class="support-icon">
-
-  <div v-else-if="node_data.item === 'cload'" src="@/assets/force.svg" class="cload-icon" :style="`--width: ${(node_data.end - node_data.start)/props.beam_length*100}vw`"></div>
 </button>
 <Teleport to="body">
   <div v-if="is_open" class="popup-background">
@@ -170,11 +171,18 @@ function delete_node(){
   position: absolute;
   --left: 0%;
   width: 32px;
-  inset: 0 0 0 calc(var(--left) - 18px);
+  inset: 0 0 0 calc(var(--left) - 27px);
   margin: auto 0;
   background-color: transparent;
   transition: none;
   cursor: pointer;
+}
+
+.cload-node {
+  --width: 0%;
+  --left: 0%;
+  width: var(--width);
+  inset: 0 0 0 calc(var(--left) - var(--width) / 2 - 12px);
 }
 
 .node:hover {
@@ -217,7 +225,7 @@ function delete_node(){
 .force-icon {
   position: relative;
   top: -25px;
-  left: -8px;
+  left: 4px;
   --rotation: 0deg;
   transform: rotate(calc(90deg - var(--rotation)));
   transform-origin: 50% 100%;
@@ -227,11 +235,16 @@ function delete_node(){
   height: 46px;
   background-image: url('@/assets/force.svg');
   background-repeat: repeat;
-  position: relative;
-  top: -25px;
-  --width: 0vw;
-  transform: translateX(calc(-55% + 32px)) scale(1,-1);
-  width: calc(var(--width) * 0.85);
+  position: absolute;
+  width: 100%;
+  top: 16px;
+  /* --width: 0%;
+  --left: 0%; */
+  /* transform: translateX(calc(-55% + 32px)) scale(1,-1); */
+  transform: scale(1,-1);
+  /* width: calc(var(--width) * 0.85); */
+  /* width: var(--width); */
+  /* inset: 16px 0 0 calc(var(--left) - var(--width) / 2 + 10px); */
   /* transform: scale(1,-1); */
   border-bottom: 2px solid var(--clr-red);
   border-left: 2px solid var(--clr-red);
@@ -241,28 +254,28 @@ function delete_node(){
 .torque-icon {
   position: relative;
   top: -25px;
-  left: -22px;
+  left: -10px;
 }
 
 .neg-torque-icon {
   transform: scaleX(-1);
-  left: -16px;
+  left: -10px;
 }
 
 .support-icon {
   position: relative;
-  left: -16px;
-  top: 20px;
+  left: -9px;
+  top: 21px;
 }
 
 .fix-icon {
   top: 2px;
-  left: -6px;
+  left: 3px;
 }
 
 .fix-icon-end {
   transform: scaleX(-1);
-  left: 4px;
+  left: 14px;
 }
 
 .node-data-container {

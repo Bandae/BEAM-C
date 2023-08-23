@@ -35,11 +35,11 @@ function check_static(nodes){
 function calc_statb_react(nodes){
   if(!check_static(nodes)) return false
 
-  const forces = nodes.filter(obj => {return obj.fx || obj.fy})
-  const torques = nodes.filter(obj => {return obj.torque})
-  const cloads = nodes.filter(obj => {return obj.item === 'cload'})
+  const forces = nodes.filter(obj => obj.fx || obj.fy)
+  const torques = nodes.filter(obj => obj.torque)
+  const cloads = nodes.filter(obj => obj.item === 'cload')
   const x_sum = (forces.map(obj => obj.fx)).reduce((a, b) => a+b, 0)
-  const y_sum = (forces.map(obj => obj.fy)).reduce((a, b) => a+b, 0) + (cloads.map(obj => obj.mag * (obj.end - obj.start))).reduce((a, b) => a+b, 0)
+  const y_sum = (forces.map(obj => obj.fy)).reduce((a, b) => a+b, 0) + (cloads.map(obj => -obj.mag * (obj.end - obj.start))).reduce((a, b) => a+b, 0)
   let torque_sum = (torques.map(obj => obj.torque)).reduce((a, b) => a+b, 0)
 
   let fix = nodes.find(obj => obj.type === 'fix')
@@ -79,31 +79,44 @@ function calc_statb_react(nodes){
   return nodes
 }
 
+function add_end_nodes(nodes, beam_length){
+  let new_nodes = JSON.parse(JSON.stringify(nodes))
+
+  const len0 = new_nodes.find(obj => obj.n_length === 0)
+  if (!len0) {
+    new_nodes.push({n_length: 0, fy: 0, fx: 0})
+  }
+  const lenmax = new_nodes.find(obj => obj.n_length === beam_length)
+  if (!lenmax) {
+    new_nodes.push({n_length: beam_length, fy: 0, fx: 0})
+  }
+
+  return new_nodes
+}
+
 function calc_force_graphs(nodes, beam_length){
-  const nodes_copy = JSON.parse(JSON.stringify(nodes))
-  const non_cload = nodes_copy.filter(obj => {return obj.item !== 'cload'})
-  const cloads_beginning = nodes_copy.filter(obj => {return obj.item === 'cload'}).map(obj => {obj.n_length = obj.start; return obj})
+  const non_cload = nodes.filter(obj => obj.item !== 'cload')
+  const cloads_beginning = nodes.filter(obj => obj.item === 'cload').map(obj => {obj.n_length = obj.start; return obj})
   const cloads_end = JSON.parse(JSON.stringify(cloads_beginning)).map(obj => {obj.n_length = obj.end; return obj})
   let new_nodes = [...non_cload, ...cloads_beginning, ...cloads_end]
   
   let t_points = []
   let n_points = []
-  const len0 = new_nodes.find(obj => {return obj.n_length === 0})
-  if (!len0) {
-    new_nodes.push({n_length: 0, fy: 0, fx: 0})
-  }
-  const lenmax = new_nodes.find(obj => {return obj.n_length === beam_length})
-  if (!lenmax) {
-    new_nodes.push({n_length: beam_length, fy: 0, fx: 0})
-  }
-  new_nodes.sort((a, b) => a.n_length - b.n_length);
+  
+  new_nodes = add_end_nodes(new_nodes, beam_length)
+  new_nodes.sort((a, b) => {
+    const res = a.n_length - b.n_length
+    if(res !== 0) return res
+    if(a.item === 'cload') return -1
+    else return 1
+  });
 
   let t_force = 0;
   let n_force = 0;
   for(const elem of new_nodes){
     let add_t_force = 0;
-    for(const inside of new_nodes.filter(obj => {return obj.item === 'cload' && obj.start < elem.n_length && obj.end > elem.n_length})){
-      add_t_force += (elem.n_length - inside.n_length) * -inside.mag
+    for(const inside of new_nodes.filter(obj => obj.item === 'cload' && obj.start < elem.n_length && obj.end > elem.n_length && obj.start === obj.n_length)){
+      add_t_force += (elem.n_length - inside.start) * -inside.mag
     }
 
     if(!(elem.item === 'cload' && elem.n_length === elem.end)){
@@ -121,25 +134,29 @@ function calc_force_graphs(nodes, beam_length){
 }
 
 function calc_torque_graph(nodes, beam_length){
-  let points = []
-  const len0 = nodes.find(obj => {return obj.n_length === 0})
-  if (!len0) {
-    nodes.push({n_length: 0, fy: 0, torque: 0});
-  }
-  const lenmax = nodes.find(obj => {return obj.n_length === beam_length})
-  if (!lenmax) {
-    nodes.push({n_length: beam_length, fy: 0, torque: 0})
-  }
+  const non_cload = nodes.filter(obj => obj.item !== 'cload')
+  const cloads_beginning = nodes.filter(obj => obj.item === 'cload').map(obj => {obj.n_length = obj.start; return obj})
+  let new_nodes = [...non_cload, ...cloads_beginning]
+
+  new_nodes = add_end_nodes(new_nodes, beam_length)
+  new_nodes.sort((a, b) => a.n_length - b.n_length)
   
-  nodes.sort((a, b) => a.n_length - b.n_length)
-  for(const elem of nodes){
-    let torque = 0;
-    for(const prev of nodes.filter(obj => {return obj.n_length < elem.n_length})){
-      if(prev.fy){torque += ((elem.n_length - prev.n_length) * prev.fy)}
-      if(prev.torque){torque += prev.torque}
+  let points = []
+  for(let x = 0; x <= beam_length; x += 0.01){
+    let torque = 0
+    let torque_jump = 0
+    for(const prev of new_nodes.filter(obj => obj.n_length <= x)){
+      if(prev.fy){torque += ((x - prev.n_length) * prev.fy)}
+      if(prev.torque){
+        if(prev.n_length === x){torque_jump = prev.torque}
+        else{torque += prev.torque}
+      }
+      if(prev.item === 'cload'){
+        torque += -prev.mag * (Math.min(prev.end, x) - prev.start) * (x - (((Math.min(prev.end, x) - prev.start) / 2) + prev.start))
+      }
     }
-    if(elem.torque){points.push({x: elem.n_length, y: torque + elem.torque})}
-    points.push({x: elem.n_length, y: torque})
+    points.push({x: x, y: torque})
+    if(torque_jump !== 0){points.push({x: x, y: torque + torque_jump})}
   }
   return points
 }
@@ -148,8 +165,13 @@ export function calculate_beam(main_nodes, beam_length){
   let nodes = JSON.parse(JSON.stringify(main_nodes));
   nodes = calc_statb_react(nodes);
   if(!nodes) return false
-  const torque_graph_points = calc_torque_graph(JSON.parse(JSON.stringify(nodes)), beam_length)
-  const force_graph_points = calc_force_graphs(JSON.parse(JSON.stringify(nodes)), beam_length)
+  const torque_graph_points = calc_torque_graph(nodes, beam_length)
+  const force_graph_points = calc_force_graphs(nodes, beam_length)
   const supports = nodes.filter(obj => obj.item === 'support')
-  return {'supports': supports, 'torque_graph_points': torque_graph_points, 't_force_graph_points': force_graph_points[0], 'n_force_graph_points': force_graph_points[1]}
+  return {
+    'supports': supports,
+    'torque_graph_points': torque_graph_points,
+    't_force_graph_points': force_graph_points[0],
+    'n_force_graph_points': force_graph_points[1]
+  }
 }
